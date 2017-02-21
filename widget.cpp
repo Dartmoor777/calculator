@@ -44,6 +44,18 @@ Widget::Widget(QWidget *parent) :
     connect(mapp,SIGNAL(mapped(QString)), this, SLOT(but_add(QString)));
 }
 
+QString Widget::calculate(QString first, QString action, QString second){
+        double fir = first.toDouble();
+        double sec = second.toDouble();
+        if ( action == "+") return action.setNum(fir+sec);
+        if ( action == "-") return action.setNum(fir-sec);
+        if ( action == "*") return action.setNum(fir*sec);
+        if ( action == "/") return action.setNum(fir/sec);
+        if ( action == "%") return action.setNum((int)fir%(int)sec);
+        if ( action == "^") return action.setNum(qPow(fir, sec));
+        qFatal("Redundant operator?");
+}
+
 void Widget::but_add(QString str){
     ui->lineEdit->setText(ui->lineEdit->text()+str);
 }
@@ -51,4 +63,82 @@ void Widget::but_add(QString str){
 Widget::~Widget()
 {
     delete ui;
+}
+
+void Widget::on_pushButton_erase_clicked(){
+    if(ui->lineEdit->text().isEmpty())return;
+    QString str{ui->lineEdit->text()};
+    str.chop(1);
+    ui->lineEdit->setText(str);
+}
+
+void Widget::on_pushButton_eq_clicked()
+{
+    if(ui->lineEdit->text().isEmpty())return;
+    QString str{ui->lineEdit->text()};
+    QRegExp isChar("([a-zA-Z])"); 							// Checking validity
+    if (isChar.indexIn(str, 0)!=-1){
+        QMessageBox::information(this, "", "Do not use characters!");
+        return;
+    }
+
+//------------------------------------------------------------------------------------------------
+//------------------Check operators!!-----------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+
+QRegExp regex(" *((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|) *(\\^|\\%|\\/|\\*|\\+|\\-) *((\\d+\\.\\d+)|(\\d+)))\\)) *(\\^|\\%|\\/|\\*) *((\\d+\\.\\d+)|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|) *(\\^|\\%|\\/|\\*|\\+|\\-) *((\\d+\\.\\d+)|(\\d+)))\\)))");
+//QRegExp brackets("\\(((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\))(\\^|\\%|\\/|\\*)((\\d+\\.\\d+)|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\)))\\)");
+//QRegExp regex("((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\))(\\^|\\%|\\/|\\*)((\\d+\\.\\d+)|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\)))");
+//QRegExp regex("((((\\d+\\.\\d+))|\\d+)(\\^|\\%|/|\\*)((\\d+\\.\\d+)|(\\d+)))");
+    int pos{0};
+    while ( (pos = regex.indexIn(str, pos))!= -1){			//Adding brackets
+        QString buf1 = regex.cap(1);
+        QString buf2 = buf1;
+        str.replace(buf1, buf2.prepend("(")+")");
+        pos+=regex.matchedLength();
+    }
+//    qDebug() << str;
+    QStringList list;													//Creating an array of glyphs
+    QRegExp split("((\\d+\\.\\d+)|\\d+|\\+|\\-|\\^|\\%|\\/|\\*|\\(|\\))");
+    pos = 0;
+    while ( (pos = split.indexIn(str, pos))!= -1){
+        list << split.cap(1);
+        pos+=split.matchedLength();
+    }
+
+//------------------------------------------------------------------------------------------------
+    /* Parsing the string and calculating the result of first pare of brackets */
+
+//    bool notEnd{true};
+   QRegularExpression digit("(\\d+)");
+//    while(notEnd){
+//        notEnd=false;
+        bool start = false;
+        QString value, action;
+        for(QList<QString>::iterator t = list.begin();t!=list.end();t++){           // Parsing the glyphs
+            if(*t == "("){
+                start=true;
+                continue;
+            }
+            if(QRegularExpressionMatch(digit.match(*t, 0)).hasMatch() && start){    // looking for decimals
+                if(value.isEmpty()){												//
+                    value=*t;
+                    continue;
+                }
+                value = calculate(value, action, *t);
+                continue;
+            }
+            if(*t!= ")" && *t!="("){  			//if there no "()" it means it should be "+-/*..."
+                action=*t;
+                continue;
+            }
+            if(*t==")"){			// erasing what were in brackets and generating one exact num
+                for(;*t!="(";list.erase(t), t--);
+                *t=value;
+                break;
+            }
+        }
+        qDebug() << list.first();
+//    }
 }
