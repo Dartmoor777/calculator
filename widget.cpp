@@ -76,9 +76,15 @@ void Widget::on_pushButton_eq_clicked()
 {
     if(ui->lineEdit->text().isEmpty())return;
     QString str{ui->lineEdit->text()};
+    QRegExp validity("(((\\^|\\%|\\/|\\*|\\+|\\-|\\.){2,})|((\\^|\\%|\\/|\\*|\\+|\\-|\\(|\\)|\\ )0\\d+))|(^\\.)|\\.(\\(|\\))|(\\(|\\))\\.|\\(\\)|\\)\\(|^(0\\d)");
+//    QRegExp validity("(((\^|\%|\/|\*|\+|\-|\.){2,})|((\^|\%|\/|\*|\+|\-|\(|\)|\ )0\d+))|(^\.)|\.(\(|\))|(\(|\))\.|\(\)|\)\(");
     QRegExp isChar("([a-zA-Z])"); 							// Checking validity
     if (isChar.indexIn(str, 0)!=-1){
         QMessageBox::information(this, "", "Do not use characters!");
+        return;
+    }
+    if (validity.indexIn(str, 0)!=-1){
+        QMessageBox::information(this, "", "Your equation is invalid!");
         return;
     }
 
@@ -98,7 +104,6 @@ QRegExp regex(" *((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|) *(\\^|\\
         str.replace(buf1, buf2.prepend("(")+")");
         pos+=regex.matchedLength();
     }
-//    qDebug() << str;
     QStringList list;													//Creating an array of glyphs
     QRegExp split("((\\d+\\.\\d+)|\\d+|\\+|\\-|\\^|\\%|\\/|\\*|\\(|\\))");
     pos = 0;
@@ -106,39 +111,42 @@ QRegExp regex(" *((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|) *(\\^|\\
         list << split.cap(1);
         pos+=split.matchedLength();
     }
+    list.append(")");
+    list.prepend("(");
 
 //------------------------------------------------------------------------------------------------
     /* Parsing the string and calculating the result of first pare of brackets */
 
-//    bool notEnd{true};
+    bool notEnd{true};
    QRegularExpression digit("(\\d+)");
-//    while(notEnd){
-//        notEnd=false;
+    while(notEnd){
         bool start = false;
         QString value, action;
         for(QList<QString>::iterator t = list.begin();t!=list.end();t++){           // Parsing the glyphs
             if(*t == "("){
                 start=true;
+                value="0";
+                action="+";
                 continue;
             }
-            if(QRegularExpressionMatch(digit.match(*t, 0)).hasMatch() && start){    // looking for decimals
-                if(value.isEmpty()){												//
-                    value=*t;
-                    continue;
-                }
-                value = calculate(value, action, *t);
-                continue;
+            if(!start){
+                notEnd=false;
+                break;
             }
-            if(*t!= ")" && *t!="("){  			//if there no "()" it means it should be "+-/*..."
+            if(*t=="/" || *t=="*" || *t=="-"|| *t=="+"|| *t=="^"|| *t=="%"){  			//if there no "()" it means it should be "+-/*..."
                 action=*t;
                 continue;
             }
-            if(*t==")"){			// erasing what were in brackets and generating one exact num
-                for(;*t!="(";list.erase(t), t--);
+            if(QRegularExpressionMatch(digit.match(*t, 0)).hasMatch() && start){    // looking for decimals
+                value = calculate(value, action, *t);
+                continue;
+            }
+            if(*t==")" && (!value.isEmpty())){			// erasing what were in brackets and generating one exact num
+                for(;*t!="(";(t=list.erase(t))--);
                 *t=value;
                 break;
             }
         }
-        qDebug() << list.first();
-//    }
+    }
+    ui->lineEdit->setText(list.first());
 }
