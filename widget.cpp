@@ -24,6 +24,8 @@ Widget::Widget(QWidget *parent) :
     connect(ui->pushButton_per, SIGNAL(clicked()), mapp, SLOT(map()));
     connect(ui->pushButton_dot, SIGNAL(clicked()), mapp, SLOT(map()));
     connect(ui->pushButton_step, SIGNAL(clicked()), mapp, SLOT(map()));
+    connect(ui->pushButton_lfbracket, SIGNAL(clicked()), mapp, SLOT(map()));
+    connect(ui->pushButton_rbracket, SIGNAL(clicked()), mapp, SLOT(map()));
     mapp->setMapping(ui->pushButton0, "0");
     mapp->setMapping(ui->pushButton1, "1");
     mapp->setMapping(ui->pushButton2, "2");
@@ -41,8 +43,15 @@ Widget::Widget(QWidget *parent) :
     mapp->setMapping(ui->pushButton_dot, ".");
     mapp->setMapping(ui->pushButton_per, "%");
     mapp->setMapping(ui->pushButton_step, "^");
+    mapp->setMapping(ui->pushButton_lfbracket, "(");
+    mapp->setMapping(ui->pushButton_rbracket, ")");
     connect(mapp,SIGNAL(mapped(QString)), this, SLOT(but_add(QString)));
 }
+
+
+//------------------------------------------------------------------------------------------------
+//------Calculating function----------------------------------------------------------------------
+//----------\/\/\/\/----------------------------------------------------------------------
 
 QString Widget::calculate(QString first, QString action, QString second){
         double fir = first.toDouble();
@@ -56,6 +65,11 @@ QString Widget::calculate(QString first, QString action, QString second){
         qFatal("Redundant operator?");
 }
 
+
+//------------------------------------------------------------------------------------------------
+//-----Adding button------------------------------------------------------------------------------
+//-------\/\/\/\/-------------------------------------------------------------------------
+
 void Widget::but_add(QString str){
     ui->lineEdit->setText(ui->lineEdit->text()+str);
 }
@@ -65,6 +79,11 @@ Widget::~Widget()
     delete ui;
 }
 
+
+//------------------------------------------------------------------------------------------------
+//-----------Erasing button-----------------------------------------------------------------------
+//-------------\/\/\/\/-------------------------------------------------------------------
+
 void Widget::on_pushButton_erase_clicked(){
     if(ui->lineEdit->text().isEmpty())return;
     QString str{ui->lineEdit->text()};
@@ -72,73 +91,112 @@ void Widget::on_pushButton_erase_clicked(){
     ui->lineEdit->setText(str);
 }
 
+
+
+//------------------------------------------------------------------------------------------------
+//----------Calculating button--------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------
+
 void Widget::on_pushButton_eq_clicked()
 {
+
+//------------------------------------------------------------------------------------------------
+//-----------Checking validity--------------------------------------------------------------------
+//----------------\/\/\/\/------------------------------------------------------------------------
     if(ui->lineEdit->text().isEmpty())return;
     QString str{ui->lineEdit->text()};
-    QRegExp isChar("([a-zA-Z])"); 							// Checking validity
-    if (isChar.indexIn(str, 0)!=-1){
-        QMessageBox::information(this, "", "Do not use characters!");
+    QRegExp validity("(((\\^|\\%|\\/|\\*|\\+|\\-|\\.){2,})|((\\^|\\%|\\/|\\*|\\+|\\-|\\(|\\)|\\ )0\\d+))|(^\\.)|\\.(\\(|\\))|(\\(|\\))\\.|\\(\\)|\\)\\(|^(0\\d)|(\\((\\^|\\%|\\/|\\*))|((\\^|\\%|\\/|\\*|\\+|\\=)\\))|(\\) *\\d)|(\\d *\\()");
+//    QRegExp validity("(((\^|\%|\/|\*|\+|\-|\.){2,})|((\^|\%|\/|\*|\+|\-|\(|\)|\ )0\d+))|(^\.)|\.(\(|\))|(\(|\))\.|\(\)|\)\(|^(0\d)");
+    QRegExp isInvalidChar("[^\\d\\+\\-\\/\\*\\%\\.\\^ \\(\\)]"); 							// Checking validity
+    if (isInvalidChar.indexIn(str, 0)!=-1){
+        QMessageBox::information(this, "", "There are invalid characters!");
+        return;
+    }
+    if (validity.indexIn(str, 0)!=-1){
+        QMessageBox::information(this, "", "Your equation is invalid!");
         return;
     }
 
 //------------------------------------------------------------------------------------------------
-//------------------Check operators!!-----------------------------------------------------------
+//------Creating a list of previous states--------------------------------------------------------
+//-------------\/\/\/\/---------------------------------------------------------------------------
+
+    if(revertList.size()>10)revertList.removeFirst();
+    revertList.append(str);
 //------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------
+//---------Adding brackets------------------------------------------------------------------------
+//-------------\/\/\/\/---------------------------------------------------------------------------
 
 QRegExp regex(" *((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|) *(\\^|\\%|\\/|\\*|\\+|\\-) *((\\d+\\.\\d+)|(\\d+)))\\)) *(\\^|\\%|\\/|\\*) *((\\d+\\.\\d+)|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|) *(\\^|\\%|\\/|\\*|\\+|\\-) *((\\d+\\.\\d+)|(\\d+)))\\)))");
-//QRegExp brackets("\\(((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\))(\\^|\\%|\\/|\\*)((\\d+\\.\\d+)|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\)))\\)");
-//QRegExp regex("((((\\d+\\.\\d+))|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\))(\\^|\\%|\\/|\\*)((\\d+\\.\\d+)|(\\d+)|\\(((((\\d+\\.\\d+))|(\\d+)|)(\\^|\\%|\\/|\\*|\\+|\\-)((\\d+\\.\\d+)|(\\d+)))\\)))");
-//QRegExp regex("((((\\d+\\.\\d+))|\\d+)(\\^|\\%|/|\\*)((\\d+\\.\\d+)|(\\d+)))");
+//QRegExp regex(" *((((\d+\.\d+))|(\d+)|\(((((\d+\.\d+))|(\d+)|) *(\^|\%|\/|\*|\+|\-) *((\d+\.\d+)|(\d+)))\)) *(\^|\%|\/|\*) *((\d+\.\d+)|(\d+)|\(((((\d+\.\d+))|(\d+)|) *(\^|\%|\/|\*|\+|\-) *((\d+\.\d+)|(\d+)))\)))");
     int pos{0};
     while ( (pos = regex.indexIn(str, pos))!= -1){			//Adding brackets
         QString buf1 = regex.cap(1);
         QString buf2 = buf1;
         str.replace(buf1, buf2.prepend("(")+")");
         pos+=regex.matchedLength();
+        qDebug() << "Loop";
     }
-//    qDebug() << str;
-    QStringList list;													//Creating an array of glyphs
+    QStringList list;
     QRegExp split("((\\d+\\.\\d+)|\\d+|\\+|\\-|\\^|\\%|\\/|\\*|\\(|\\))");
     pos = 0;
-    while ( (pos = split.indexIn(str, pos))!= -1){
+    while ( (pos = split.indexIn(str, pos))!= -1){					//Creating an array of glyphs
         list << split.cap(1);
         pos+=split.matchedLength();
     }
+    list.append(")");
+    list.prepend("(");
 
 //------------------------------------------------------------------------------------------------
-    /* Parsing the string and calculating the result of first pare of brackets */
+//-----Parsing the string and calculating the result of first pare of brackets--------------------
+//-----------\/\/\/\/-----------------------------------------------------------------------------
 
-//    bool notEnd{true};
+    bool notEnd{true};
    QRegularExpression digit("(\\d+)");
-//    while(notEnd){
-//        notEnd=false;
+    while(notEnd){
         bool start = false;
         QString value, action;
         for(QList<QString>::iterator t = list.begin();t!=list.end();t++){           // Parsing the glyphs
             if(*t == "("){
-                start=true;
+                start=true;  //Showing that we've found first bracket
+                value="0";  //Setting default value & action
+                action="+";
                 continue;
             }
-            if(QRegularExpressionMatch(digit.match(*t, 0)).hasMatch() && start){    // looking for decimals
-                if(value.isEmpty()){												//
-                    value=*t;
-                    continue;
-                }
-                value = calculate(value, action, *t);
-                continue;
+            if(!start){
+                notEnd=false;
+                break;
             }
-            if(*t!= ")" && *t!="("){  			//if there no "()" it means it should be "+-/*..."
+            if(*t=="/" || *t=="*" || *t=="-"|| *t=="+"|| *t=="^"|| *t=="%"){  			//if there no "()" it means it should be "+-/*..."
                 action=*t;
                 continue;
             }
-            if(*t==")"){			// erasing what were in brackets and generating one exact num
-                for(;*t!="(";list.erase(t), t--);
+            if(QRegularExpressionMatch(digit.match(*t, 0)).hasMatch() && start){    // looking for decimals
+                value = calculate(value, action, *t);
+                continue;
+            }
+            if(*t==")" && (!value.isEmpty())){			// erasing what were in brackets and generating one exact num
+                for(;*t!="(";(t=list.erase(t))--);
                 *t=value;
                 break;
             }
         }
-        qDebug() << list.first();
-//    }
+    }
+//------------------------------------------------------------------------------------------------
+//-------Final result-----------------------------------------------------------------------------
+//--------\/\/\/\/--------------------------------------------------------------------------------
+    ui->lineEdit->setText(list.first());
+    ui->listWidget->addItem(str + "=" + list.first());
+}
+
+//------------------------------------------------------------------------------------------------
+//------Returning of previous state---------------------------------------------------------------
+//---------\/\/\/\/-------------------------------------------------------------------------------
+
+void Widget::on_pushButton_revert_clicked()
+{
+    if(revertList.isEmpty())return;
+    ui->lineEdit->setText(revertList.last());
+    ui->listWidget->removeItemWidget(ui->listWidget->takeItem(revertList.size()-1));
+    revertList.removeLast();
 }

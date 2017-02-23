@@ -18,11 +18,13 @@ public:
 
 private:
     Ui::Widget *ui;
+    QList<QString> revertList;
 public slots:
     void but_add(QString);
 private slots:
     void on_pushButton_erase_clicked();
     void on_pushButton_eq_clicked();
+    void on_pushButton_revert_clicked();
 };
 
 #endif // WIDGET_H
