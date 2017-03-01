@@ -19,6 +19,8 @@ public:
 private:
     Ui::Widget *ui;
     QList<QString> revertList;
+    QString evaluation(QString, QRegExp);
+    QList<QString> split(QString str);
 public slots:
     void but_add(QString);
 private slots:

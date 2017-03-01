@@ -17,7 +17,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>Widget</string>
+   <string>Calculator</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -480,6 +480,9 @@
        </property>
        <property name="text">
         <string>=</string>
+       </property>
+       <property name="shortcut">
+        <string>Return</string>
        </property>
       </widget>
      </item>
