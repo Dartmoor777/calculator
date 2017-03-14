@@ -86,6 +86,7 @@ void Widget::but_add(QString str){
     int cursorPosition=ui->lineEdit->cursorPosition();
     ui->lineEdit->setText(ui->lineEdit->text().insert(cursorPosition, str));
     ui->lineEdit->setCursorPosition(cursorPosition+1);
+    ui->lineEdit->setFocus();
 }
 
 Widget::~Widget()
@@ -103,6 +104,7 @@ void Widget::on_pushButton_erase_clicked(){
     int cursorPosition=ui->lineEdit->cursorPosition()-1;
     ui->lineEdit->setText(ui->lineEdit->text().remove(cursorPosition, 1));
     ui->lineEdit->setCursorPosition(cursorPosition);
+    ui->lineEdit->setFocus();
 }
 
 
@@ -230,6 +232,7 @@ QString str{ui->lineEdit->text()};
 //--------\/\/\/\/--------------------------------------------------------------------------------
     ui->lineEdit->setText(fullExpressionList.first());
     ui->listWidget->addItem(str + "=" + fullExpressionList.first());
+    ui->lineEdit->setFocus();
 }
 
 //------------------------------------------------------------------------------------------------
@@ -242,4 +245,5 @@ void Widget::on_pushButton_revert_clicked()
     ui->lineEdit->setText(revertList.last());
     ui->listWidget->removeItemWidget(ui->listWidget->takeItem(revertList.size()-1));
     revertList.removeLast();
+    ui->lineEdit->setFocus();
 }
