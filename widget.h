@@ -21,12 +21,14 @@ private:
     QList<QString> revertList;
     QString evaluation(QString, QRegExp);
     QList<QString> split(QString str);
+    bool eventFilter(QObject *watched, QEvent *event);
 public slots:
     void but_add(QString);
 private slots:
     void on_pushButton_erase_clicked();
     void on_pushButton_eq_clicked();
     void on_pushButton_revert_clicked();
+    void on_lineEdit_textChanged(const QString &arg1);
 };
 
 #endif // WIDGET_H

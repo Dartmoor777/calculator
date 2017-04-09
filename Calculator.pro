@@ -14,7 +14,9 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         widget.cpp
+#    advancedlineedit.cpp
 
 HEADERS  += widget.h
+#    advancedlineedit.h
 
 FORMS    += widget.ui
