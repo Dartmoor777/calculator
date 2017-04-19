@@ -8,8 +8,8 @@ namespace Ui {
 class Widget;
 }
 
-constexpr double pi = 3.1415926535897;
-constexpr double e = 2.7182818284;
+const QString pi = "3.141592";
+const QString e = "2.718281";
 
 class Widget : public QWidget
 {

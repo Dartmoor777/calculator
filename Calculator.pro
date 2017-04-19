@@ -13,10 +13,13 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        widget.cpp
+        widget.cpp \
+    mainwindow.cpp
 #    advancedlineedit.cpp
 
-HEADERS  += widget.h
+HEADERS  += widget.h \
+    mainwindow.h
 #    advancedlineedit.h
 
-FORMS    += widget.ui
+FORMS    += widget.ui \
+    mainwindow.ui

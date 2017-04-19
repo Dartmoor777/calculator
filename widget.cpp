@@ -65,7 +65,7 @@ Widget::Widget(QWidget *parent) :
     mapp->setMapping(ui->pushButton_lfbracket, "(");
     mapp->setMapping(ui->pushButton_rbracket, ")");
     mapp->setMapping(ui->sqrtButton, "sqrt()");
-    mapp->setMapping(ui->moduleButton, "||");
+    mapp->setMapping(ui->moduleButton, "abs()");
     mapp->setMapping(ui->ctgButton, "ctg()");
     mapp->setMapping(ui->arcctgButton, "arcctg()");
     mapp->setMapping(ui->cosButton, "cos()");
@@ -87,14 +87,13 @@ Widget::Widget(QWidget *parent) :
 
 QLinkedList<QString> Widget::split(QString str){
     QLinkedList<QString> list;
-    QRegExp split("(( *(\\+|\\-)? *((\\d+\\.\\d+)|(\\d+)))|\\+|\\-|\\^|\\%|\\/|\\*|\\(|\\)|(arcsin)|(arccos)|(arctan)|(sin)|(cos)|(tan)|(sqrt)|(log *\\d+)|(log)|(ln)|(e)|(exp)|\\||(ctg)|(arcctg)|(lg)|(pi))");
-//    QRegExp split("(( *(\+|\-)? *((\d+\.\d+)|(\d+)))|\+|\-|\^|\%|\/|\*|\(|\)|(arcsin)|(arccos)|(arctan)|(sin)|(cos)|(tan)|(sqrt)|(log *\d+)|(log)|(ln)|(e)|\||(ctg)|(arcctg))");
-    if(!split.isValid())
-        qFatal("split regexp is invalid!");
+    QRegExp split("(( *(\\+|\\-)? *((\\d+\\.\\d+)|(\\d+)|(pi)|(e)))|\\+|\\-|\\^|\\%|\\/|\\*|\\(|\\)|(abs)|(arcsin)|(arccos)|(arctan)|(sin)|(cos)|(tan)|(sqrt)|(log *\\d+)|(log)|(ln)|(exp)|(ctg)|(arcctg)|(lg))");
+//    if(!split.isValid())
+//        qFatal("split is invalid!");
     int pos = 0;
     while ( (pos = split.indexIn(str, pos))!= -1){					//Creating an array of glyphs
         list << split.cap(1);
-        pos+=split.matchedLength();
+        pos+=split.matchedLength(); //Regulart expression
     }
     return list;
 }
@@ -105,28 +104,36 @@ QLinkedList<QString> Widget::split(QString str){
 //----------\/\/\/\/----------------------------------------------------------------------
 
 QString Widget::calculate(QString first, QString action, QString second){
+        QChar firstGlyph = first[0] == '-' ? '-' : '+';
+        QChar secondGlyph = second[0] == '-' ? '-' : '+';
+        first.replace(QRegExp("(^(\\+|\\-)? *(e)$)"), (firstGlyph + e));
+        first.replace(QRegExp("(^(\\+|\\-)? *(pi)$)"), (firstGlyph  + pi));
+        second.replace(QRegExp("(^(\\+|\\-)? *(e)$)"), (secondGlyph + e));
+        second.replace(QRegExp("(^(\\+|\\-)? *(pi)$)"), (secondGlyph + pi));
         double fir = first.toDouble();
         double sec = second.toDouble();
-        if ( action == "+") return action.setNum(fir+sec);
-        if ( action == "-") return action.setNum(fir-sec);
-        if ( action == "*") return action.setNum(fir*sec);
-        if ( action == "/") return action.setNum(fir/sec);
-        if ( action == "%") return action.setNum((int)fir%(int)sec);
-        if ( action == "^") return action.setNum(qPow(fir, sec));
-        if ( action == "sin") return action.setNum(qSin(fir));
-        if ( action == "cos") return action.setNum(qCos(fir));
-        if ( action == "tan") return action.setNum(qTan(fir));
-        if ( action == "arcsin") return action.setNum(qAsin(fir));
-        if ( action == "arccos") return action.setNum(qAcos(fir));
-        if ( action == "arctan") return action.setNum(qAtan(fir));
-        if ( action == "log") return action.setNum(log(sec)/log(fir));
-        if ( action == "lg") return action.setNum(log(fir)/log(10));
-        if ( action == "ln") return action.setNum(qLn(fir));
-        if ( action == "exp") return action.setNum(qExp(fir));
-        if ( action == "sqrt") return action.setNum(qSqrt(fir));
-        if ( action == "ctg") return action.setNum(1.0/qTan(fir));
-        if ( action == "arcctg") return action.setNum((pi/2.0) - qAtan(fir));
-        qFatal("Redundant operator?");
+        if ( action == "-") return (action.setNum(fir-sec)).replace(QRegExp("e\\+"), "E");
+        if ( action == "+") return (action.setNum(fir+sec)).replace(QRegExp("e\\+"), "E");
+        if ( action == "*") return (action.setNum(fir*sec)).replace(QRegExp("e\\+"), "E");
+        if ( action == "/") return (action.setNum(fir/sec)).replace(QRegExp("e\\+"), "E");
+        if ( action == "%") return (action.setNum((int)fir%(int)sec)).replace(QRegExp("e\\+"), "E");
+        if ( action == "^") return (action.setNum(qPow(fir, sec))).replace(QRegExp("e\\+"), "E");
+        if ( action == "sin") return (action.setNum(qSin(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "cos") return (action.setNum(qCos(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "tan") return (action.setNum(qTan(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "arcsin") return (action.setNum(qAsin(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "arccos") return (action.setNum(qAcos(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "arctan") return (action.setNum(qAtan(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "log") return (action.setNum(log(sec)/log(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "lg") return (action.setNum(log(fir)/log(10))).replace(QRegExp("e\\+"), "E");
+        if ( action == "ln") return (action.setNum(qLn(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "exp") return (action.setNum(qExp(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "sqrt") return (action.setNum(qSqrt(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "ctg") return (action.setNum(1.0/qTan(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "arcctg") return (action.setNum((pi.toDouble())/2.0 - qAtan(fir))).replace(QRegExp("e\\+"), "E");
+        if ( action == "abs") return (action.setNum(qAbs(fir))).replace(QRegExp("e\\+"), "E");
+        return "";
+//        qFatal("Redundant operator?");
 }
 
 
@@ -141,7 +148,7 @@ void Widget::but_add(QString str){
     int cursorPosition = ui->lineEdit->cursorPosition();
     ui->lineEdit->setText(ui->lineEdit->text().insert(cursorPosition, str));
     ui->lineEdit->setCursorPosition(cursorPosition+=str.size());
-    if ( (*(str.end()-1) == ')' || *(str.end()-1) == '|') && str.length() > 1 ){
+    if ( (*(str.end()-1) == ')')  && (str.length() > 1) ){
         ui->lineEdit->setCursorPosition(cursorPosition-1);
         ui->lineEdit->setFocus();
         return;
@@ -170,8 +177,6 @@ void Widget::on_pushButton_erase_clicked(){
 
 QString Widget::evaluation(QString expression, QRegExp pattern){
     int pos{0};
-//    qDebug() << "Initial pattern:" << pattern.pattern();
-//    qDebug() << "Initial expression:"<< expression ;
     while ( (pos = pattern.indexIn(expression, pos))!= -1){
         QString value{"0"};
         QString action{"+"};
@@ -179,9 +184,9 @@ QString Widget::evaluation(QString expression, QRegExp pattern){
         int tokenCount{0};
         QString buf1 = pattern.cap(1);
         auto expressionList = split(buf1);
-//        qDebug() << "Position of " << buf1 << "is" << pos;
-//        qDebug() << "Current expression list" << expressionList;
-        QRegularExpression digit("(\\d+)");
+        QRegularExpression digit("(\\d+|((e|pi){1}))");
+//        if(!digit.isValid())
+//            qFatal("Digit is invalid");
         for(auto listElement:expressionList){
                 if(listElement=="/" || listElement=="*" || listElement=="^"||
                         listElement=="%" || listElement=="-"|| listElement=="+"){
@@ -197,17 +202,15 @@ QString Widget::evaluation(QString expression, QRegExp pattern){
                 }
                 if(QRegularExpressionMatch(digit.match(listElement, 0)).hasMatch()){    // looking for decimals
                     if(tokenCount==2)listElement.prepend(token);
-//                    qDebug() << value << action << listElement << "=";
                     value = calculate(value, action, listElement);
-//                    qDebug() << value;
                     tokenCount=0;
                 }
         }
         expression.replace(pos, buf1.length(), value);
-//        qDebug() << "Changed expression:" << expression;
         pos=0;
     }
-    if(!expression.isEmpty() && expression[0].isDigit())
+    if(!expression.isEmpty() && /*QRegExp("^(\\+|\\-)").exactMatch(expression)*/ expression[0].isDigit())
+//        expression.prepend("+");
          expression = expression.toDouble() >= 0 ? expression.prepend("+") : expression ;
     return expression;
 }
@@ -224,44 +227,32 @@ void Widget::on_pushButton_eq_clicked()
         QRegExp validity;
         QString validatedString;
         if(str.isEmpty())return;
-        validity.setPattern("(e)");
-        validatedString.setNum(e);
+        int pos{0};
         str.replace(validity, validatedString);
-        validity.setPattern("(pi)");
-        validatedString.setNum(pi);
-        str.replace(validity, validatedString);
-
         validatedString = str;
-        validity.setPattern("(((\\^|\\%|\\/|\\*|\\+|\\-|\\(|\\)|\\ )0\\d+))|(^\\.)|\\.(\\(|\\))|(\\(|\\))\\.|\\(\\)|^(0\\d)|(\\((\\^|\\%|\\/|\\*))|((\\^|\\%|\\/|\\*|\\+|\\=)\\))|(\\) *\\d|(\\^|\\%|\\/|\\*|\\+|\\-|\\.){2,}|(\\) *\\w)|(\\d+\\.\\d+(\\.(\\d+)?){1,}))|(( +\\. *)|( *\\. +))|(\\d+\\.\\d+|\\d+) +(\\d+\\.\\d+|\\d+)");
-        if(!validity.isValid())
-            qFatal("error in first validity regexp!");
+        validity.setPattern("(((\\^|\\%|\\/|\\*|\\+|\\-|\\(|\\)|\\ )0\\d+))|(^\\.)|\\.(\\(|\\))|(\\(|\\))\\.|\\(\\)|^(0\\d)|(\\((\\^|\\%|\\/|\\*))|((\\^|\\%|\\/|\\*|\\+|\\=)\\))|(\\) *\\d|(\\^|\\%|\\/|\\*|\\+|\\-|\\.){2,}|(\\) *\\w)|(\\d+\\.\\d+(\\.(\\d+)?){1,}))|(( +\\. *)|( *\\. +))|(\\d+\\.\\d+|\\d+) +(\\d+\\.\\d+|\\d+)|\\|");
+//        if(!validity.isValid())
+//            qFatal("error in first validity regexp!");
         if (validity.indexIn(str, 0)!=-1){
-            qDebug() << str;
             ui->conversionLabel->setText("Your equation is invalid!");
             return;
         }
-
-        validity.setPattern("(((exp)|(lg)|(arcsin)|(arccos)|(arctan)|(sin)|(cos)|(tan)|(ln)|(log *(\\d+\\.\\d+|\\d+))|log|(sqrt)|(ctg)|(arcctg)) *\\()");//(log *(\\d+|\\(.+\\)) *\\(.+\\))
-        if(!validity.isValid())
-            qFatal("error in validity regexp!") ;
-        int pos{0};
+        validity.setPattern("(((abs)|(exp)|(lg)|(arcsin)|(arccos)|(arctan)|(sin)|(cos)|(tan)|(ln)|(log *(\\d+\\.\\d+|\\d+))|(log)|(sqrt)|(ctg)|(arcctg)) *\\()");//(log *(\\d+|\\(.+\\)) *\\(.+\\))
+//        if(!validity.isValid())
+//            qFatal("error in validity regexp!") ;
+        pos = 0;
         while ((pos = validity.indexIn(validatedString, pos)) != -1){
             QString buf{validity.cap(1)};
             if(QRegExp("log *\\(").exactMatch(buf)){
                 validatedString.insert( (validatedString.indexOf(QRegExp("\\) *\\("), pos)+1), "+");
             }
             validatedString.replace(pos, buf.length(), "(");
-            qDebug() << "buf=" << buf << " Validated string: " << validatedString;
             pos = 0;
         }
-
-
+        validatedString.replace(QRegExp("(e)|(pi)"), "(1)");
         validity.setPattern("([^\\d\\+\\-\\/\\*\\%\\.\\^\\(\\)\\| ]|(\\d *\\())|\\) *\\(");
-//        if(!validity.isValid())
-//            qFatal("error in third validity regexp!");
         if (validity.indexIn(validatedString, 0)!=-1){
-            qDebug() << validatedString;
-            ui->conversionLabel->setText("There are invalid characters!");
+            ui->conversionLabel->setText("Your equation is invalid!");
             return;
         }
         int lbracket{0}, rbracket{0};
@@ -278,12 +269,10 @@ void Widget::on_pushButton_eq_clicked()
 //------Creating a list of previous states--------------------------------------------------------
 //-------------\/\/\/\/---------------------------------------------------------------------------
 
-//    ui->listWidget->count();
 
-    if(ui->listWidget->count() > 10){
+    if(ui->listWidget->count() > 20){
         ui->listWidget->removeItemWidget(ui->listWidget->takeItem(0));
     }
-//    revertList.append(str);
     auto fullExpressionList = split(str);
 
     fullExpressionList.append(")");
@@ -295,29 +284,26 @@ void Widget::on_pushButton_eq_clicked()
         QString bracketBoof;
         notEnd=false;
         for(QLinkedList<QString>::iterator  t = fullExpressionList.begin();t!=fullExpressionList.end();t++){
-//            qDebug() << "Loop in while's for";
             notEnd=true;
-            if((*t == "(") || ((*t == "|") && (*start != "|"))){
+            if(*t == "("){
                 start=t;
-//                qDebug() << "start" << *start;
                 bracketBoof="";
                 continue;
             }
-            if((*t==")") || (*t == "|")){
-                bool isItModule = *start == "|" ? true : false;
-                for(;/*("(")!=*t*/(start)!=t;(t=fullExpressionList.erase(t))--);
-                QRegExp square("( *(\\d+\\.\\d+|\\d+) *(\\^) *(\\+|\\-)? *(\\d+\\.\\d+|\\d+))");
-                QRegExp highOperator("( *(\\+|\\-)? *(\\d+\\.\\d+|\\d+) *(\\*|\\/|\\%) *(\\+|\\-)? *(\\d+\\.\\d+|\\d+))");
-                QRegExp nums("( *(\\+|\\-)? *(\\d+\\.\\d+|\\d+) *(\\+|\\-) *(\\+|\\-)? *(\\d+\\.\\d+|\\d+))");
-//                if(!nums.isValid())
-//                    qFatal("error in nums regexp!");
+            if(*t==")"){
+                for(;(start)!=t;(t=fullExpressionList.erase(t))--);
+                QRegExp square("( *(\\d+\\.\\d+|\\d+|(pi)|(e)) *(\\^) *(\\+|\\-)? *(\\d+\\.\\d+|\\d+|(pi)|(e)))");
+                QRegExp highOperator("( *(\\+|\\-)? *(\\d+\\.\\d+|\\d+|(pi)|(e)) *(\\*|\\/|\\%) *(\\+|\\-)? *(\\d+\\.\\d+|\\d+|(pi)|(e)))");
+                QRegExp nums("( *(\\+|\\-)? *(\\d+\\.\\d+|\\d+|(pi)|(e)) *(\\+|\\-) *(\\+|\\-)? *(\\d+\\.\\d+|\\d+|(pi)|(e)))");
+//                if( (!square.isValid()) || (!highOperator.isValid()) || (!nums.isValid()))
+//                    qFatal("something is invalid");
+
+
+
                 *t = evaluation(evaluation(evaluation(bracketBoof, square), highOperator),nums);
-                //calculating a logarithm
                 QRegExp logWithNum ("(log *(\\+|\\-)?\\d+)");
                 if ((t != fullExpressionList.begin()) &&
                        logWithNum.exactMatch(*(t-1)) ){
-//                        (QRegularExpressionMatch(logWithNum.match(
-//                                                 *(t-1))).hasMatch())){
                     (t-1)->remove(QRegExp("(log *)"));
                     *(t-1) = calculate(*(t-1), "log", *t);
                     fullExpressionList.erase(t);
@@ -328,32 +314,26 @@ void Widget::on_pushButton_eq_clicked()
                     break;
                 }
 
-                //calculating a function
-                highOperator.setPattern("((exp)|(lg)|(arcsin)|(arccos)|(arctan)|(sin)|(cos)|(tan)|(ln)|log|(sqrt)|(ctg)|(arcctg))");
-                if(!highOperator.isValid())
-                    qFatal("second highOperation is invalid");
+                highOperator.setPattern("((abs)|(exp)|(lg)|(arcsin)|(arccos)|(arctan)|(sin)|(cos)|(tan)|(ln)|log|(sqrt)|(ctg)|(arcctg))");
+//                if(!highOperator.isValid())
+//                    qFatal("second highOperation is invalid");
                 if((t != fullExpressionList.begin()) && highOperator.exactMatch(*(t-1))){ //checking whether it's a function  ((*(t-1))[0].isLetter())
                     *(t-1) = calculate(*t, *(t-1));  //writing in previous position where was a function's name
                     fullExpressionList.erase(t);
                 }
-                //moduling
-                if(isItModule){
-//                    qDebug() << "Moduling";
-                    t->setNum(qAbs(t->toDouble())); //setting module
-                }
                 break;
             }
-            if((*(t))[0].isLetter())
+            if((*(t))[0].isLetter() && !(QRegExp("^(\\+|\\-)? *(e|pi){1} *$").exactMatch(*t)) )
                 continue;
             bracketBoof+=*t;
         }
-//        qDebug() << "Loop in while";
     }
 
 //------------------------------------------------------------------------------------------------
 //-------Final result-----------------------------------------------------------------------------
 //--------\/\/\/\/--------------------------------------------------------------------------------
     fullExpressionList.first().remove("+");
+    fullExpressionList.first().replace(QRegExp("E"), "*10^");
     auto selectedList = ui->listWidget->selectedItems();
     if(selectedList.count() > 0){
         selectedList.first()->setText(str + "=" + fullExpressionList.first());
@@ -377,10 +357,6 @@ void Widget::on_pushButton_revert_clicked()
         ui->lineEdit->setCursorPosition(cursorPosition-1);
     }
     ui->lineEdit->setFocus();
-//    ui->lineEdit->setText(revertList.last());
-//    ui->listWidget->removeItemWidget(ui->listWidget->takeItem(revertList.size()-1));
-//    revertList.removeLast();
-//    ui->lineEdit->setFocus();
 }
 
 
@@ -411,7 +387,7 @@ bool Widget::eventFilter(QObject *watched, QEvent *event){
         QString str = ui->lineEdit->text();
         int cursorPosition = ui->lineEdit->cursorPosition();
         QRegularExpression doubleOperators("(\\^|\\%|\\/|\\*|\\+|\\-|\\.)");
-        if(!doubleOperators.isValid()) qFatal("Error in doubleOperators regexp!");
+//        if(!doubleOperators.isValid()) qFatal("Error in doubleOperators regexp!");
         if (
                 (QRegularExpressionMatch(doubleOperators.match((QString)keyEvent->key())).hasMatch()) &&
                 (QRegularExpressionMatch(doubleOperators.match((QString)str[cursorPosition]))).hasMatch()
@@ -420,33 +396,23 @@ bool Widget::eventFilter(QObject *watched, QEvent *event){
             return true;
         }
 
-       QChar withWhichOverStep[]{')', '|', '('};
-       for(int t=0;t<3;t++){
         if (
-           (QChar)keyEvent->key() == (withWhichOverStep[t]) &&
-           ((QChar)keyEvent->key() == str[cursorPosition]) &&
-           ((QChar)keyEvent->key() != '(')
+           (QChar)keyEvent->key() == (')') &&
+           ((QChar)keyEvent->key() == str[cursorPosition])
             ){
             ui->lineEdit->setCursorPosition(cursorPosition+1);
             return true;
         }
-        if (
-                (QString)keyEvent->key() == withWhichOverStep[t] &&
-                ((QChar)keyEvent->key() != ')')
-                ){
-            if(
-                str.length() > (cursorPosition) &&
-                ((str[cursorPosition]).isDigit())
-                    )break;
-            QString inserted = withWhichOverStep[t] == '|' ? "||" : "()";
-            ui->lineEdit->insert(inserted);
+        if ( (QChar)keyEvent->key() == '(' ){
+            if( str.length() > (cursorPosition) &&
+                ((str[cursorPosition]).isDigit()) )
+            return QObject::eventFilter(watched, event);
+            ui->lineEdit->insert("()");
             ui->lineEdit->setCursorPosition(cursorPosition+1);
             return true;
         }
-       }
 
         doubleOperators.setPattern("(\\^|\\%|\\/|\\*|\\+|\\-|\\.)");
-//        if(!doubleOperators.isValid()) qFatal("Error in doubleOperators regexp!");
         if ( ((cursorPosition-1) >= 0) &&
                 (QRegularExpressionMatch(doubleOperators.match((QString)keyEvent->key())).hasMatch()) &&
              (QRegularExpressionMatch(doubleOperators.match((QString)str[cursorPosition-1]))).hasMatch())
@@ -454,8 +420,7 @@ bool Widget::eventFilter(QObject *watched, QEvent *event){
 
         if ( ((cursorPosition-1) >= 0) &&
                 (keyEvent->key() == Qt::Key_Backspace) &&
-                ( ((str[cursorPosition] == ')') && (str[cursorPosition-1] == '(')) ||
-                  ((str[cursorPosition] == '|') && (str[cursorPosition-1] == '|'))) ){
+                 ((str[cursorPosition] == ')') && (str[cursorPosition-1] == '(')) ){
             str.remove(cursorPosition-1, 2);
             ui->lineEdit->setText(str);
             ui->lineEdit->setCursorPosition(cursorPosition-1);
@@ -473,7 +438,6 @@ void Widget::on_listWidget_itemClicked(QListWidgetItem *item)
    ui->lineEdit->setFocus();
 }
 
-//clear selection button
 void Widget::on_saveButton_3_clicked()
 {
     ui->listWidget->clearSelection();
